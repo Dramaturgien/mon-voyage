@@ -758,11 +758,9 @@
         <div id="todosListEl"></div>
       </div>
       <div id="tab-docs" class="tab-panel">
-        <div class="doc-upload-area">
-          <input type="file" id="fileInput" onchange="handleFileUpload(event)" multiple>
-          <div class="doc-upload-icon">📎</div>
-          <div class="doc-upload-text">Appuyer pour ajouter un document</div>
-          <div class="doc-upload-sub">PDF, images, billets, réservations...</div>
+        <button class="add-city-btn" onclick="openAddDocModal()" style="margin-bottom:12px;">＋ Ajouter un document</button>
+        <div style="background:rgba(56,189,248,0.06); border:1px solid rgba(56,189,248,0.15); border-radius:var(--radius-sm); padding:10px 13px; margin-bottom:14px; font-size:12px; color:var(--text2); line-height:1.6;">
+          💡 Colle le lien de partage Google Drive du fichier. Il s'ouvrira directement dans l'app.
         </div>
         <div id="docsListEl"></div>
 
@@ -1023,6 +1021,41 @@
       <div class="modal-actions">
         <button class="btn-cancel" onclick="closeModal('addReceiptModal')">Annuler</button>
         <button class="btn-confirm" onclick="saveReceiptModal()">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD DOC MODAL -->
+  <div class="modal-overlay" id="addDocModal">
+    <div class="modal-box">
+      <div class="modal-handle"></div>
+      <div class="modal-title" id="docModalTitle">Ajouter un document</div>
+      <div class="modal-field">
+        <div class="modal-label">Nom du document</div>
+        <input class="modal-input" id="docName" type="text" placeholder="ex: Billet Air France, Réservation Hôtel...">
+      </div>
+      <div class="modal-field">
+        <div class="modal-label">Type</div>
+        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-top:4px;" id="docTypeGrid">
+          <button class="receipt-cat-btn selected" data-type="billet" onclick="selectDocType(this)">✈️<br><span>Billet</span></button>
+          <button class="receipt-cat-btn" data-type="hotel" onclick="selectDocType(this)">🏨<br><span>Hôtel</span></button>
+          <button class="receipt-cat-btn" data-type="voiture" onclick="selectDocType(this)">🚗<br><span>Voiture</span></button>
+          <button class="receipt-cat-btn" data-type="parc" onclick="selectDocType(this)">🎡<br><span>Parc</span></button>
+          <button class="receipt-cat-btn" data-type="assurance" onclick="selectDocType(this)">🛡️<br><span>Assurance</span></button>
+          <button class="receipt-cat-btn" data-type="autre" onclick="selectDocType(this)">📎<br><span>Autre</span></button>
+        </div>
+      </div>
+      <div class="modal-field">
+        <div class="modal-label">Lien Google Drive</div>
+        <input class="modal-input" id="docUrl" type="text" placeholder="https://drive.google.com/file/d/...">
+        <div style="font-size:11px; color:var(--text3); margin-top:6px; line-height:1.6;">
+          Dans Drive → clic droit sur le fichier → "Obtenir le lien" → "Copier le lien"
+        </div>
+      </div>
+      <input type="hidden" id="docEditId">
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeModal('addDocModal')">Annuler</button>
+        <button class="btn-confirm" onclick="saveDocModal()">Enregistrer</button>
       </div>
     </div>
   </div>
@@ -1592,57 +1625,70 @@ function deleteTodo(id) {
 // ═══════════════════════════════
 // DOCUMENTS
 // ═══════════════════════════════
-function handleFileUpload(event) {
-  const files = event.target.files;
-  if (!files.length) return;
+const DOC_TYPE_META = {
+  billet:    { icon: '✈️', label: 'Billet' },
+  hotel:     { icon: '🏨', label: 'Hôtel' },
+  voiture:   { icon: '🚗', label: 'Voiture' },
+  parc:      { icon: '🎡', label: 'Parc' },
+  assurance: { icon: '🛡️', label: 'Assurance' },
+  autre:     { icon: '📎', label: 'Autre' }
+};
+
+function openAddDocModal() {
+  document.getElementById('docName').value = '';
+  document.getElementById('docUrl').value = '';
+  document.getElementById('docEditId').value = '';
+  document.getElementById('docModalTitle').textContent = 'Ajouter un document';
+  document.querySelectorAll('#docTypeGrid .receipt-cat-btn').forEach((b,i) => b.classList.toggle('selected', i===0));
+  openModal('addDocModal');
+  setTimeout(() => document.getElementById('docName').focus(), 300);
+}
+
+function selectDocType(btn) {
+  document.querySelectorAll('#docTypeGrid .receipt-cat-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+}
+
+function saveDocModal() {
+  const name = document.getElementById('docName').value.trim();
+  if (!name) { showToast('Entrez un nom'); return; }
+  const url = document.getElementById('docUrl').value.trim();
+  const type = document.querySelector('#docTypeGrid .receipt-cat-btn.selected')?.dataset.type || 'autre';
+  const editId = document.getElementById('docEditId').value;
   const city = state.cities.find(c => c.id === currentCityId);
   if (!city) return;
-  let loaded = 0;
-  Array.from(files).forEach(file => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const doc = {
-        id: Date.now().toString() + Math.random(),
-        name: file.name,
-        size: file.size,
-        type: file.type,
-        data: e.target.result
-      };
-      city.docs.push(doc);
-      loaded++;
-      if (loaded === files.length) {
-        saveState();
-        renderDocs();
-        updateStats();
-        showToast(`${loaded} document(s) ajouté(s)`);
-      }
-    };
-    reader.readAsDataURL(file);
-  });
-  event.target.value = '';
+  if (!city.docs) city.docs = [];
+
+  if (editId) {
+    const idx = city.docs.findIndex(d => d.id === editId);
+    if (idx !== -1) city.docs[idx] = { ...city.docs[idx], name, url, type };
+    showToast('Document mis à jour ✓');
+  } else {
+    city.docs.push({ id: Date.now().toString() + Math.random(), name, url, type });
+    showToast('Document ajouté ✓');
+  }
+  saveState(); renderDocs(); updateStats();
+  closeModal('addDocModal');
 }
 
 function renderDocs() {
   const city = state.cities.find(c => c.id === currentCityId);
   const el = document.getElementById('docsListEl');
   if (!city || !city.docs.length) {
-    el.innerHTML = '';
+    el.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📄</div><p>Aucun document.<br>Appuyez sur + pour ajouter un lien Google Drive.</p></div>';
     return;
   }
   el.innerHTML = city.docs.map(doc => {
-    const isPdf = doc.type === 'application/pdf';
-    const isImg = doc.type.startsWith('image/');
-    const iconClass = isPdf ? 'pdf' : isImg ? 'img' : 'other';
-    const iconEmoji = isPdf ? '📕' : isImg ? '🖼️' : '📎';
-    const sizeStr = doc.size > 1024*1024 ? (doc.size/1024/1024).toFixed(1)+' Mo' : (doc.size/1024).toFixed(0)+' Ko';
-    return `<div class="doc-item">
-      <div class="doc-icon ${iconClass}">${iconEmoji}</div>
+    const meta = DOC_TYPE_META[doc.type] || DOC_TYPE_META.autre;
+    const hasLink = !!doc.url;
+    return `<div class="doc-item" onclick="openDoc('${doc.id}')" style="cursor:${hasLink?'pointer':'default'};">
+      <div class="doc-icon other" style="background:rgba(56,189,248,0.12);">${meta.icon}</div>
       <div class="doc-info">
         <div class="doc-name">${doc.name}</div>
-        <div class="doc-size">${sizeStr}</div>
+        <div class="doc-size" style="color:${hasLink?'var(--accent)':'var(--text3)'};">${hasLink ? '🔗 Google Drive' : 'Aucun lien'}</div>
       </div>
-      <button class="doc-open-btn" onclick="openDoc('${doc.id}')">Ouvrir</button>
-      <button class="doc-del-btn" onclick="deleteDoc('${doc.id}')">×</button>
+      <button class="doc-open-btn" onclick="event.stopPropagation(); editDoc('${doc.id}')">✏️</button>
+      <button class="doc-del-btn" onclick="event.stopPropagation(); deleteDoc('${doc.id}')">×</button>
     </div>`;
   }).join('');
 }
@@ -1650,16 +1696,20 @@ function renderDocs() {
 function openDoc(id) {
   const city = state.cities.find(c => c.id === currentCityId);
   const doc = city.docs.find(d => d.id === id);
+  if (!doc || !doc.url) { showToast('Aucun lien pour ce document'); return; }
+  window.open(doc.url, '_blank');
+}
+
+function editDoc(id) {
+  const city = state.cities.find(c => c.id === currentCityId);
+  const doc = city.docs.find(d => d.id === id);
   if (!doc) return;
-  // Convert base64 to blob and open in new tab (no download)
-  const byteStr = atob(doc.data.split(',')[1]);
-  const ab = new ArrayBuffer(byteStr.length);
-  const ia = new Uint8Array(ab);
-  for (let i = 0; i < byteStr.length; i++) ia[i] = byteStr.charCodeAt(i);
-  const blob = new Blob([ab], { type: doc.type || 'application/octet-stream' });
-  const url = URL.createObjectURL(blob);
-  window.open(url, '_blank');
-  setTimeout(() => URL.revokeObjectURL(url), 10000);
+  document.getElementById('docName').value = doc.name;
+  document.getElementById('docUrl').value = doc.url || '';
+  document.getElementById('docEditId').value = doc.id;
+  document.getElementById('docModalTitle').textContent = 'Modifier le document';
+  document.querySelectorAll('#docTypeGrid .receipt-cat-btn').forEach(b => b.classList.toggle('selected', b.dataset.type === doc.type));
+  openModal('addDocModal');
 }
 
 function deleteDoc(id) {
@@ -2131,17 +2181,16 @@ function renderRoTodos(city) {
 function renderRoDocs(city) {
   const el = document.getElementById('roDocsListEl');
   const docs = city.docs || [];
-  if (!docs.length) { el.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📄</div><p>Aucun document.<br><span style="font-size:11px;color:var(--text3);">Les fichiers ne sont pas inclus dans le lien partagé.</span></p></div>'; return; }
+  if (!docs.length) { el.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📄</div><p>Aucun document.</p></div>'; return; }
+  const roMeta = { billet:'✈️', hotel:'🏨', voiture:'🚗', parc:'🎡', assurance:'🛡️', autre:'📎' };
   el.innerHTML = docs.map(doc => {
-    const isPdf = doc.type === 'application/pdf';
-    const isImg = doc.type && doc.type.startsWith('image/');
-    const iconEmoji = isPdf ? '📕' : isImg ? '🖼️' : '📎';
-    const sizeStr = doc.size > 1024*1024 ? (doc.size/1024/1024).toFixed(1)+' Mo' : Math.round(doc.size/1024)+' Ko';
-    return `<div class="doc-item">
-      <div class="doc-icon ${isPdf?'pdf':isImg?'img':'other'}">${iconEmoji}</div>
+    const icon = roMeta[doc.type] || '📎';
+    const hasLink = !!doc.url;
+    return `<div class="doc-item" onclick="${hasLink ? `window.open('${doc.url}','_blank')` : ''}" style="cursor:${hasLink?'pointer':'default'};">
+      <div class="doc-icon other" style="background:rgba(56,189,248,0.12);">${icon}</div>
       <div class="doc-info">
         <div class="doc-name">${doc.name}</div>
-        <div class="doc-size">${sizeStr} — fichier sur le téléphone principal</div>
+        <div class="doc-size" style="color:${hasLink?'var(--accent)':'var(--text3)'};">${hasLink ? '🔗 Ouvrir dans Drive' : 'Pas de lien'}</div>
       </div>
     </div>`;
   }).join('');
