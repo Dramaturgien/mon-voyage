@@ -691,7 +691,7 @@
     <div class="home-header">
       <div class="home-header-top">
         <div style="display:flex; align-items:flex-start; gap:12px; flex:1; min-width:0;">
-          <button id="tripEmojiBtn" onclick="openTripEmojiModal()" style="font-size:36px; background:transparent; border:none; cursor:pointer; flex-shrink:0; padding:0; line-height:1;" title="Changer le drapeau">✈️</button>
+          <button id="tripEmojiBtn" onclick="openTripEmojiModal()" style="font-size:36px; background:transparent; border:none; cursor:pointer; flex-shrink:0; padding:0; line-height:1;" title="Changer le drapeau">🌍</button>
           <div style="flex:1; min-width:0;">
             <p class="home-greeting">Mon voyage</p>
             <p class="home-trip" id="tripName" onclick="editTripNameInline()" style="cursor:pointer;" title="Cliquer pour renommer">Chargement...</p>
@@ -805,7 +805,7 @@
           <span class="settings-item-arrow">›</span>
         </div>
         <div class="settings-item" onclick="openTripEmojiModal()">
-          <span class="settings-item-icon" id="settingsTripEmoji">✈️</span>
+          <span class="settings-item-icon" id="settingsTripEmoji">🌍</span>
           <span class="settings-item-label">Icône / drapeau du voyage</span>
           <span class="settings-item-arrow">›</span>
         </div>
@@ -1168,7 +1168,7 @@ function init() {
     if (!state.cities) state.cities = [];
   }
   const pinLogo = document.querySelector('.pin-logo');
-  if (pinLogo) pinLogo.textContent = state.trip.emoji || '✈️';
+  if (pinLogo) pinLogo.textContent = state.trip.emoji || '🌍';
   if (!state.pin) {
     showPinSet();
   } else {
@@ -1179,14 +1179,15 @@ function init() {
 }
 
 function generateManifest() {
+  const icon = state.trip.emoji || '🌍';
   const manifest = {
     name: state.trip.name || 'Mon Voyage',
-    short_name: 'Voyage',
+    short_name: state.trip.name || 'Voyage',
     start_url: '.',
     display: 'standalone',
     background_color: '#0f172a',
     theme_color: '#0f172a',
-    icons: [{ src: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">✈️</text></svg>', sizes: '192x192', type: 'image/svg+xml' }]
+    icons: [{ src: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">' + icon + '</text></svg>', sizes: '192x192', type: 'image/svg+xml' }]
   };
   const blob = new Blob([JSON.stringify(manifest)], {type:'application/json'});
   document.getElementById('manifestLink').href = URL.createObjectURL(blob);
@@ -1346,7 +1347,7 @@ function showHome() {
   updateStats();
   document.getElementById('tripName').textContent = state.trip.name || 'Mon Voyage';
   document.getElementById('tripDates').textContent = state.trip.dates || '';
-  document.getElementById('tripEmojiBtn').textContent = state.trip.emoji || '✈️';
+  document.getElementById('tripEmojiBtn').textContent = state.trip.emoji || '🌍';
   showScreen('homeScreen');
 }
 
@@ -1354,7 +1355,7 @@ function showSettings() {
   document.getElementById('settingsTripName').textContent = state.trip.name;
   document.getElementById('settingsTripDates').textContent = state.trip.dates;
   const tripEmoji = document.getElementById('settingsTripEmoji');
-  if (tripEmoji) tripEmoji.textContent = state.trip.emoji || '✈️';
+  if (tripEmoji) tripEmoji.textContent = state.trip.emoji || '🌍';
   showScreen('settingsScreen');
 }
 
@@ -1679,7 +1680,7 @@ document.querySelectorAll('.modal-overlay').forEach(m => {
 // ═══════════════════════════════
 function openTripEmojiModal() {
   const flagPicker = document.getElementById('tripFlagPicker');
-  const current = state.trip.emoji || '✈️';
+  const current = state.trip.emoji || '🌍';
   flagPicker.innerHTML = FLAG_EMOJIS.map(e =>
     `<div class="emoji-opt${e===current?' selected':''}" onclick="selectTripEmoji(this)" data-emoji="${e}">${e}</div>`
   ).join('');
@@ -1704,6 +1705,7 @@ function saveTripEmoji() {
   document.getElementById('tripEmojiBtn').textContent = emoji;
   const se = document.getElementById('settingsTripEmoji');
   if (se) se.textContent = emoji;
+  generateManifest();
   closeModal('tripEmojiModal');
   showToast('Icône mise à jour ✓');
 }
@@ -2038,7 +2040,7 @@ function checkReadOnlyMode() {
 }
 
 function showReadOnly() {
-  document.getElementById('roTripName').textContent = (roData.trip.name || 'Voyage') + ' ✈️';
+  document.getElementById('roTripName').textContent = (roData.trip.name || 'Voyage') + ' ' + (roData.trip.emoji || '🌍');
   document.getElementById('roTripDates').textContent = roData.trip.dates || '';
   const el = document.getElementById('roCitiesListEl');
   el.innerHTML = (roData.cities || []).map(city => {
