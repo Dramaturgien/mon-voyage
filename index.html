@@ -1438,7 +1438,7 @@ function switchEmojiTab(tab) {
   ep.innerHTML = list.map((e, i) => {
     const label = e === '—' ? '<span style="font-size:11px;color:var(--text3);">aucun</span>' : e;
     const val = e === '—' ? '' : e;
-    return `<div class="emoji-opt${i===0?' selected':''}" onclick="selectEmoji(this)" data-emoji="${val}" style="${e==='—'?'font-size:13px;':''}''>${label}</div>`;
+    return `<div class="emoji-opt${i===0?' selected':''}" onclick="selectEmoji(this)" data-emoji="${val}" style="${e==='—'?'font-size:13px;':''}">${label}</div>`;
   }).join('');
 }
 
@@ -1651,11 +1651,15 @@ function openDoc(id) {
   const city = state.cities.find(c => c.id === currentCityId);
   const doc = city.docs.find(d => d.id === id);
   if (!doc) return;
-  const a = document.createElement('a');
-  a.href = doc.data;
-  a.download = doc.name;
-  a.target = '_blank';
-  a.click();
+  // Convert base64 to blob and open in new tab (no download)
+  const byteStr = atob(doc.data.split(',')[1]);
+  const ab = new ArrayBuffer(byteStr.length);
+  const ia = new Uint8Array(ab);
+  for (let i = 0; i < byteStr.length; i++) ia[i] = byteStr.charCodeAt(i);
+  const blob = new Blob([ab], { type: doc.type || 'application/octet-stream' });
+  const url = URL.createObjectURL(blob);
+  window.open(url, '_blank');
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
 }
 
 function deleteDoc(id) {
@@ -1887,7 +1891,14 @@ function openReceiptDetail(id) {
   // If has file, open it; otherwise open edit modal
   if (r.fileData) {
     const a = document.createElement('a');
-    a.href = r.fileData; a.download = r.fileName || 'recu'; a.target = '_blank'; a.click();
+    const byteStr2 = atob(r.fileData.split(',')[1]);
+    const ab2 = new ArrayBuffer(byteStr2.length);
+    const ia2 = new Uint8Array(ab2);
+    for (let i = 0; i < byteStr2.length; i++) ia2[i] = byteStr2.charCodeAt(i);
+    const blob2 = new Blob([ab2], { type: r.fileData.split(';')[0].split(':')[1] || 'application/octet-stream' });
+    const url2 = URL.createObjectURL(blob2);
+    window.open(url2, '_blank');
+    setTimeout(() => URL.revokeObjectURL(url2), 10000);
   } else {
     // Pre-fill modal for editing
     receiptFileData = null; receiptFileName = '';
