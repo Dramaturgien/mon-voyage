@@ -1,0 +1,2163 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0f172a">
+<title>Mon Voyage</title>
+<link rel="manifest" id="manifestLink">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg: #0f172a;
+    --bg2: #1e293b;
+    --bg3: #334155;
+    --accent: #38bdf8;
+    --accent2: #7c3aed;
+    --gold: #f59e0b;
+    --green: #10b981;
+    --red: #ef4444;
+    --text: #f1f5f9;
+    --text2: #94a3b8;
+    --text3: #475569;
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.14);
+    --card: rgba(30,41,59,0.95);
+    --radius: 16px;
+    --radius-sm: 10px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+    font-size: 15px;
+  }
+
+  /* ── SCREENS ── */
+  .screen { display: none; min-height: 100vh; flex-direction: column; }
+  .screen.active { display: flex; }
+
+  /* ── PIN SCREEN ── */
+  #pinScreen {
+    align-items: center;
+    justify-content: center;
+    background: var(--bg);
+    padding: 2rem;
+  }
+  .pin-logo {
+    font-size: 48px;
+    margin-bottom: 1rem;
+  }
+  .pin-title {
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 0.25rem;
+    letter-spacing: -0.02em;
+  }
+  .pin-sub {
+    font-size: 13px;
+    color: var(--text2);
+    margin-bottom: 2.5rem;
+  }
+  .pin-dots {
+    display: flex;
+    gap: 14px;
+    margin-bottom: 2rem;
+  }
+  .pin-dot {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    border: 2px solid var(--text3);
+    transition: all 0.2s;
+  }
+  .pin-dot.filled { background: var(--accent); border-color: var(--accent); transform: scale(1.1); }
+  .pin-dot.error { background: var(--red); border-color: var(--red); }
+  .pin-pad {
+    display: grid;
+    grid-template-columns: repeat(3, 72px);
+    gap: 12px;
+  }
+  .pin-btn {
+    width: 72px; height: 72px;
+    border-radius: 50%;
+    border: 1.5px solid var(--border2);
+    background: var(--bg2);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 22px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .pin-btn:active { background: var(--bg3); transform: scale(0.94); }
+  .pin-btn.del { font-size: 18px; color: var(--text2); }
+  .pin-btn.empty { border-color: transparent; background: transparent; pointer-events: none; }
+  .pin-hint { font-size: 12px; color: var(--text3); margin-top: 1.5rem; text-align: center; }
+
+  /* ── HOME SCREEN ── */
+  #homeScreen { background: var(--bg); }
+  .home-header {
+    background: linear-gradient(180deg, #1e293b 0%, var(--bg) 100%);
+    padding: 3rem 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .home-header-top {
+    display: flex; align-items: flex-start; justify-content: space-between;
+  }
+  .home-greeting { font-size: 12px; color: var(--text2); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 4px; }
+  .home-trip { font-size: 24px; font-weight: 600; color: var(--text); letter-spacing: -0.03em; line-height: 1.2; }
+  .home-dates { font-size: 13px; color: var(--text2); margin-top: 4px; }
+  .settings-btn {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    border: 1.5px solid var(--border2);
+    background: var(--bg2);
+    color: var(--text2);
+    cursor: pointer;
+    font-size: 17px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    margin-top: 4px;
+  }
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-top: 1.25rem;
+  }
+  .stat-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    text-align: center;
+  }
+  .stat-val { font-size: 20px; font-weight: 600; color: var(--accent); }
+  .stat-label { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+  .cities-list { padding: 1rem 1.25rem; flex: 1; overflow-y: auto; }
+  .section-label {
+    font-size: 11px;
+    color: var(--text3);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 0.75rem;
+    font-weight: 500;
+  }
+
+  .city-item {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    transition: border-color 0.2s, background 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .city-item:active { background: var(--bg3); }
+  .city-item::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    border-radius: 3px 0 0 3px;
+  }
+  .city-item.current::before { background: var(--green); }
+  .city-item.upcoming::before { background: var(--accent); }
+  .city-item.past::before { background: var(--text3); }
+
+  .city-emoji {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    background: var(--bg3);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+  }
+  .city-info { flex: 1; min-width: 0; }
+  .city-name { font-size: 16px; font-weight: 600; color: var(--text); letter-spacing: -0.02em; }
+  .city-meta { font-size: 12px; color: var(--text2); margin-top: 2px; }
+  .city-badges { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 6px; }
+  .badge {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+  }
+  .badge-doc { background: rgba(56,189,248,0.15); color: #38bdf8; border: 1px solid rgba(56,189,248,0.25); }
+  .badge-note { background: rgba(245,158,11,0.15); color: #f59e0b; border: 1px solid rgba(245,158,11,0.25); }
+  .badge-todo { background: rgba(16,185,129,0.15); color: #10b981; border: 1px solid rgba(16,185,129,0.25); }
+  .city-arrow { color: var(--text3); font-size: 18px; flex-shrink: 0; }
+
+  .add-city-btn {
+    width: 100%;
+    padding: 14px;
+    border: 1.5px dashed var(--border2);
+    border-radius: var(--radius);
+    background: transparent;
+    color: var(--text2);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    margin-top: 4px;
+    transition: all 0.2s;
+  }
+  .add-city-btn:active { border-color: var(--accent); color: var(--accent); }
+
+  /* ── DETAIL SCREEN ── */
+  #detailScreen { background: var(--bg); }
+  .detail-header {
+    background: var(--bg2);
+    padding: 3rem 1.25rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .back-row { display: flex; align-items: center; gap: 10px; margin-bottom: 1rem; }
+  .back-btn {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    border: 1.5px solid var(--border2);
+    background: var(--bg3);
+    color: var(--text);
+    cursor: pointer;
+    font-size: 18px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .detail-city-name { font-size: 26px; font-weight: 600; letter-spacing: -0.03em; }
+  .detail-city-dates { font-size: 13px; color: var(--text2); margin-top: 3px; }
+  .tab-row {
+    display: flex;
+    gap: 6px;
+    margin-top: 1rem;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+  }
+  .tab-row::-webkit-scrollbar { display: none; }
+  .tab-btn {
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--border2);
+    background: transparent;
+    color: var(--text2);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s;
+  }
+  .tab-btn.active { background: var(--accent); border-color: var(--accent); color: #0f172a; font-weight: 600; }
+
+  .detail-body { padding: 1rem 1.25rem; flex: 1; overflow-y: auto; }
+
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* NOTES TAB */
+  .note-textarea {
+    width: 100%;
+    min-height: 220px;
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    line-height: 1.7;
+    padding: 14px;
+    resize: none;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .note-textarea:focus { border-color: var(--accent); }
+  .save-note-btn {
+    width: 100%;
+    padding: 13px;
+    margin-top: 10px;
+    border-radius: var(--radius-sm);
+    border: none;
+    background: var(--accent);
+    color: #0f172a;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .save-note-btn:active { opacity: 0.8; }
+  .save-note-btn.saved { background: var(--green); color: #fff; }
+
+  /* TODO TAB */
+  .todo-input-row { display: flex; gap: 8px; margin-bottom: 1rem; }
+  .todo-input {
+    flex: 1;
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    padding: 10px 12px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .todo-input:focus { border-color: var(--accent); }
+  .todo-add-btn {
+    width: 42px; height: 42px;
+    border-radius: var(--radius-sm);
+    border: none;
+    background: var(--accent);
+    color: #0f172a;
+    font-size: 22px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+  .todo-item-row {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .todo-check-btn {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    border: 2px solid var(--text3);
+    background: transparent;
+    cursor: pointer;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+    font-size: 12px;
+    color: transparent;
+    margin-top: 1px;
+  }
+  .todo-check-btn.done { background: var(--green); border-color: var(--green); color: #fff; }
+  .todo-item-body { flex: 1; min-width: 0; }
+  .todo-item-text { font-size: 13px; line-height: 1.5; }
+  .todo-item-text.done { text-decoration: line-through; color: var(--text3); }
+  .todo-link-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    margin-top: 5px;
+    padding: 3px 9px 3px 7px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: none;
+    border: 1px solid;
+    transition: opacity 0.15s;
+  }
+  .todo-link-badge:active { opacity: 0.7; }
+  .todo-link-maps { background: rgba(16,185,129,0.12); color: #10b981; border-color: rgba(16,185,129,0.25); }
+  .todo-link-web { background: rgba(56,189,248,0.12); color: #38bdf8; border-color: rgba(56,189,248,0.25); }
+  .todo-link-other { background: rgba(124,58,237,0.12); color: #a78bfa; border-color: rgba(124,58,237,0.25); }
+  .todo-actions { display: flex; gap: 6px; flex-shrink: 0; }
+  .todo-del-btn {
+    width: 28px; height: 28px;
+    border-radius: 6px;
+    border: 1px solid var(--border2);
+    background: transparent;
+    color: var(--text3);
+    cursor: pointer;
+    font-size: 14px;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+
+  /* RECEIPTS TAB */
+  .receipt-cat-btn {
+    padding: 10px 6px;
+    border-radius: var(--radius-sm);
+    border: 1.5px solid var(--border2);
+    background: var(--bg3);
+    color: var(--text2);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 18px;
+    cursor: pointer;
+    transition: all 0.15s;
+    line-height: 1.4;
+    text-align: center;
+  }
+  .receipt-cat-btn span { display: block; font-size: 10px; color: var(--text3); margin-top: 2px; }
+  .receipt-cat-btn.selected { border-color: var(--accent); background: rgba(56,189,248,0.12); color: var(--text); }
+  .receipt-cat-btn.selected span { color: var(--accent); }
+  .receipt-item {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .receipt-item:active { background: var(--bg3); }
+  .receipt-cat-icon {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    background: var(--bg3);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .receipt-info { flex: 1; min-width: 0; }
+  .receipt-desc { font-size: 13px; font-weight: 500; color: var(--text); }
+  .receipt-meta { font-size: 11px; color: var(--text3); margin-top: 2px; }
+  .receipt-has-file { font-size: 10px; color: var(--accent); margin-top: 3px; }
+  .receipt-amount { font-size: 15px; font-weight: 600; color: var(--gold); flex-shrink: 0; text-align: right; }
+  .receipt-amount-neg { color: var(--red); }
+
+  /* DOCUMENTS TAB */
+  .doc-upload-area {
+    border: 2px dashed var(--border2);
+    border-radius: var(--radius);
+    padding: 2rem 1rem;
+    text-align: center;
+    cursor: pointer;
+    margin-bottom: 1rem;
+    transition: border-color 0.2s, background 0.2s;
+    position: relative;
+  }
+  .doc-upload-area:hover { border-color: var(--accent); background: rgba(56,189,248,0.04); }
+  .doc-upload-area input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+  .doc-upload-icon { font-size: 32px; margin-bottom: 8px; }
+  .doc-upload-text { font-size: 14px; color: var(--text2); }
+  .doc-upload-sub { font-size: 12px; color: var(--text3); margin-top: 4px; }
+
+  .doc-item {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .doc-icon {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+  .doc-icon.pdf { background: rgba(239,68,68,0.15); }
+  .doc-icon.img { background: rgba(56,189,248,0.15); }
+  .doc-icon.other { background: rgba(124,58,237,0.15); }
+  .doc-info { flex: 1; min-width: 0; }
+  .doc-name { font-size: 13px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .doc-size { font-size: 11px; color: var(--text3); margin-top: 2px; }
+  .doc-open-btn {
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border2);
+    background: transparent;
+    color: var(--accent);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .doc-del-btn {
+    width: 28px; height: 28px;
+    border-radius: 6px;
+    border: 1px solid var(--border2);
+    background: transparent;
+    color: var(--text3);
+    cursor: pointer;
+    font-size: 14px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    display: none;
+    position: absolute; inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 100;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  #app { position: relative; min-height: 100vh; overflow: hidden; }
+  .modal-box {
+    background: #1e293b;
+    border-radius: 24px 24px 0 0;
+    padding: 1.5rem 1.25rem 2rem;
+    width: 100%;
+    max-width: 480px;
+    border: 1px solid var(--border2);
+    border-bottom: none;
+  }
+  .modal-handle { width: 40px; height: 4px; border-radius: 2px; background: var(--bg3); margin: 0 auto 1.25rem; }
+  .modal-title { font-size: 18px; font-weight: 600; margin-bottom: 1.25rem; letter-spacing: -0.02em; }
+  .modal-field { margin-bottom: 1rem; }
+  .modal-label { font-size: 12px; color: var(--text2); margin-bottom: 6px; letter-spacing: 0.04em; text-transform: uppercase; }
+  .modal-input {
+    width: 100%;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    padding: 11px 13px;
+    outline: none;
+  }
+  .modal-input:focus { border-color: var(--accent); }
+  .emoji-picker { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+  .emoji-opt {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    border: 2px solid transparent;
+    background: var(--bg3);
+    font-size: 20px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+  }
+  .emoji-opt.selected { border-color: var(--accent); background: rgba(56,189,248,0.1); }
+  .modal-actions { display: flex; gap: 10px; margin-top: 1.25rem; }
+  .btn-cancel {
+    flex: 1; padding: 13px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border2);
+    background: transparent;
+    color: var(--text2);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  .btn-confirm {
+    flex: 1; padding: 13px;
+    border-radius: var(--radius-sm);
+    border: none;
+    background: var(--accent);
+    color: #0f172a;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  /* ── SETTINGS SCREEN ── */
+  #settingsScreen { background: var(--bg); }
+  .settings-header {
+    padding: 3rem 1.25rem 1.25rem;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .settings-body { padding: 1.25rem; flex: 1; overflow-y: auto; }
+  .settings-section { margin-bottom: 1.5rem; }
+  .settings-section-title { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; font-weight: 500; }
+  .settings-item {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 13px 15px;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+  }
+  .settings-item-icon { font-size: 20px; width: 28px; text-align: center; }
+  .settings-item-label { flex: 1; font-size: 14px; }
+  .settings-item-val { font-size: 13px; color: var(--text2); }
+  .settings-item-arrow { color: var(--text3); font-size: 16px; }
+  .danger-btn {
+    width: 100%;
+    padding: 13px;
+    border-radius: var(--radius-sm);
+    border: 1px solid rgba(239,68,68,0.3);
+    background: rgba(239,68,68,0.08);
+    color: #ef4444;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    cursor: pointer;
+    margin-top: 4px;
+  }
+
+  /* TOAST */
+  .toast {
+    position: absolute;
+    bottom: 2rem; left: 50%; transform: translateX(-50%) translateY(80px);
+    background: var(--bg3);
+    color: var(--text);
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 13px;
+    white-space: nowrap;
+    border: 1px solid var(--border2);
+    z-index: 200;
+    transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    pointer-events: none;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--bg3); border-radius: 2px; }
+
+  .empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--text3);
+    font-size: 14px;
+  }
+  .empty-state-icon { font-size: 36px; margin-bottom: 0.75rem; }
+
+  .progress-bar {
+    height: 3px;
+    background: var(--bg3);
+    border-radius: 2px;
+    margin-top: 8px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width 0.3s;
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ═══ PIN SCREEN ═══ -->
+  <div id="pinScreen" class="screen active">
+    <div class="pin-logo">✈️</div>
+    <p class="pin-title" id="pinTitle">Mon Voyage</p>
+    <p class="pin-sub" id="pinSub">Entrez votre code PIN</p>
+    <div class="pin-dots">
+      <div class="pin-dot" id="d0"></div>
+      <div class="pin-dot" id="d1"></div>
+      <div class="pin-dot" id="d2"></div>
+      <div class="pin-dot" id="d3"></div>
+    </div>
+    <div class="pin-pad">
+      <button class="pin-btn" onclick="pinPress('1')">1</button>
+      <button class="pin-btn" onclick="pinPress('2')">2</button>
+      <button class="pin-btn" onclick="pinPress('3')">3</button>
+      <button class="pin-btn" onclick="pinPress('4')">4</button>
+      <button class="pin-btn" onclick="pinPress('5')">5</button>
+      <button class="pin-btn" onclick="pinPress('6')">6</button>
+      <button class="pin-btn" onclick="pinPress('7')">7</button>
+      <button class="pin-btn" onclick="pinPress('8')">8</button>
+      <button class="pin-btn" onclick="pinPress('9')">9</button>
+      <button class="pin-btn empty"></button>
+      <button class="pin-btn" onclick="pinPress('0')">0</button>
+      <button class="pin-btn del" onclick="pinDel()">⌫</button>
+    </div>
+    <p class="pin-hint" id="pinHint">Premier lancement ? Créez votre PIN en entrant 4 chiffres.</p>
+  </div>
+
+  <!-- ═══ HOME SCREEN ═══ -->
+  <div id="homeScreen" class="screen">
+    <div class="home-header">
+      <div class="home-header-top">
+        <div style="display:flex; align-items:flex-start; gap:12px; flex:1; min-width:0;">
+          <button id="tripEmojiBtn" onclick="openTripEmojiModal()" style="font-size:36px; background:transparent; border:none; cursor:pointer; flex-shrink:0; padding:0; line-height:1;" title="Changer le drapeau">✈️</button>
+          <div style="flex:1; min-width:0;">
+            <p class="home-greeting">Mon voyage</p>
+            <p class="home-trip" id="tripName" onclick="editTripNameInline()" style="cursor:pointer;" title="Cliquer pour renommer">Chargement...</p>
+            <p class="home-dates" id="tripDates"></p>
+          </div>
+        </div>
+        <button class="settings-btn" onclick="showSettings()" title="Paramètres">⚙</button>
+      </div>
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-val" id="statCities">0</div>
+          <div class="stat-label">villes</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" id="statDocs">0</div>
+          <div class="stat-label">documents</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" id="statTodos">0</div>
+          <div class="stat-label">à faire</div>
+        </div>
+      </div>
+    </div>
+    <div class="cities-list">
+      <p class="section-label">Destinations</p>
+      <div id="citiesListEl"></div>
+      <button class="add-city-btn" onclick="openAddCity()">＋ Ajouter une ville</button>
+    </div>
+  </div>
+
+  <!-- ═══ DETAIL SCREEN ═══ -->
+  <div id="detailScreen" class="screen">
+    <div class="detail-header">
+      <div class="back-row">
+        <button class="back-btn" onclick="showHome()">‹</button>
+        <span style="font-size:13px; color:var(--text2);">Retour</span>
+        <button class="back-btn" onclick="deleteCurrentCity()" style="margin-left:auto; border-color:rgba(239,68,68,0.3); color:#ef4444; font-size:14px;">🗑</button>
+      </div>
+      <div style="display:flex; align-items:center; gap:12px;">
+        <span id="detailEmoji" style="font-size:32px;"></span>
+        <div>
+          <div class="detail-city-name" id="detailName"></div>
+          <div class="detail-city-dates" id="detailDates"></div>
+        </div>
+      </div>
+      <div class="tab-row">
+        <button class="tab-btn active" onclick="switchTab('notes', this)">📝 Notes</button>
+        <button class="tab-btn" onclick="switchTab('todos', this)">✅ À faire</button>
+        <button class="tab-btn" onclick="switchTab('docs', this)">📄 Documents</button>
+        <button class="tab-btn" onclick="switchTab('receipts', this)">🧾 Factures</button>
+      </div>
+    </div>
+    <div class="detail-body">
+      <div id="tab-notes" class="tab-panel active">
+        <textarea class="note-textarea" id="noteTextarea" placeholder="Notes libres, adresses, restaurants à tester, conseils..."></textarea>
+        <button class="save-note-btn" id="saveNoteBtn" onclick="saveNote()">Enregistrer</button>
+      </div>
+      <div id="tab-todos" class="tab-panel">
+        <div class="todo-input-row">
+          <input class="todo-input" id="todoInput" type="text" placeholder="Tâche rapide... (Entrée pour ajouter)" onkeydown="if(event.key==='Enter')addTodo()">
+          <button class="todo-add-btn" onclick="openAddTodoModal()" title="Avec lien" style="background:var(--bg3); border:1px solid var(--border2); font-size:16px;">🔗</button>
+          <button class="todo-add-btn" onclick="addTodo()">+</button>
+        </div>
+        <div id="todosListEl"></div>
+      </div>
+      <div id="tab-docs" class="tab-panel">
+        <div class="doc-upload-area">
+          <input type="file" id="fileInput" accept="*/*" onchange="handleFileUpload(event)" multiple>
+          <div class="doc-upload-icon">📎</div>
+          <div class="doc-upload-text">Appuyer pour ajouter un document</div>
+          <div class="doc-upload-sub">PDF, images, billets, réservations...</div>
+        </div>
+        <div id="docsListEl"></div>
+
+      <div id="tab-receipts" class="tab-panel">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+          <div id="receipts-total-box" style="background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius-sm); padding:10px 16px; flex:1; margin-right:10px;">
+            <div style="font-size:11px; color:var(--text3); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:2px;">Total dépensé</div>
+            <div id="receipts-total" style="font-size:22px; font-weight:600; color:var(--accent);">0,00 €</div>
+          </div>
+          <button class="todo-add-btn" onclick="openAddReceiptModal()" style="width:48px; height:48px; border-radius:var(--radius-sm); font-size:22px; flex-shrink:0;">+</button>
+        </div>
+        <div style="display:flex; gap:6px; overflow-x:auto; margin-bottom:12px; padding-bottom:2px; scrollbar-width:none;" id="receipt-filter-row">
+          <button class="tab-btn active" onclick="filterReceipts('all', this)" style="font-size:12px; padding:5px 12px; white-space:nowrap;">Tous</button>
+          <button class="tab-btn" onclick="filterReceipts('restaurant', this)" style="font-size:12px; padding:5px 12px; white-space:nowrap;">🍽️ Resto</button>
+          <button class="tab-btn" onclick="filterReceipts('transport', this)" style="font-size:12px; padding:5px 12px; white-space:nowrap;">🚗 Transport</button>
+          <button class="tab-btn" onclick="filterReceipts('hotel', this)" style="font-size:12px; padding:5px 12px; white-space:nowrap;">🏨 Hébergement</button>
+          <button class="tab-btn" onclick="filterReceipts('loisir', this)" style="font-size:12px; padding:5px 12px; white-space:nowrap;">🎡 Loisirs</button>
+          <button class="tab-btn" onclick="filterReceipts('shopping', this)" style="font-size:12px; padding:5px 12px; white-space:nowrap;">🛍️ Shopping</button>
+          <button class="tab-btn" onclick="filterReceipts('autre', this)" style="font-size:12px; padding:5px 12px; white-space:nowrap;">📌 Autre</button>
+        </div>
+        <div id="receiptsListEl"></div>
+      </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ SETTINGS SCREEN ═══ -->
+  <div id="settingsScreen" class="screen">
+    <div class="settings-header">
+      <button class="back-btn" onclick="showHome()">‹</button>
+      <span style="font-size:18px; font-weight:600;">Paramètres</span>
+    </div>
+    <div class="settings-body">
+      <div class="settings-section">
+        <div class="settings-section-title">Voyage</div>
+        <div class="settings-item" onclick="editTripNameInline()">
+          <span class="settings-item-icon">✏️</span>
+          <span class="settings-item-label">Nom du voyage</span>
+          <span class="settings-item-val" id="settingsTripName"></span>
+          <span class="settings-item-arrow">›</span>
+        </div>
+        <div class="settings-item" onclick="openTripEmojiModal()">
+          <span class="settings-item-icon" id="settingsTripEmoji">✈️</span>
+          <span class="settings-item-label">Icône / drapeau du voyage</span>
+          <span class="settings-item-arrow">›</span>
+        </div>
+        <div class="settings-item" onclick="editTripDates()">
+          <span class="settings-item-icon">📅</span>
+          <span class="settings-item-label">Dates</span>
+          <span class="settings-item-val" id="settingsTripDates"></span>
+          <span class="settings-item-arrow">›</span>
+        </div>
+      </div>
+      <div class="settings-section">
+        <div class="settings-section-title">Sécurité</div>
+        <div class="settings-item" onclick="changePIN()">
+          <span class="settings-item-icon">🔒</span>
+          <span class="settings-item-label">Changer le PIN</span>
+          <span class="settings-item-arrow">›</span>
+        </div>
+      </div>
+      <div class="settings-section">
+        <div class="settings-section-title">Installation</div>
+        <div class="settings-item" onclick="showInstallHelp()">
+          <span class="settings-item-icon">📱</span>
+          <span class="settings-item-label">Installer sur Android</span>
+          <span class="settings-item-arrow">›</span>
+        </div>
+      </div>
+      <div class="settings-section">
+        <div class="settings-section-title">Partage</div>
+        <div class="settings-item" onclick="openShareModal()">
+          <span class="settings-item-icon">🔗</span>
+          <span class="settings-item-label">Partager en lecture seule</span>
+          <span class="settings-item-val" style="color:var(--green); font-size:12px;">Lien + QR code</span>
+          <span class="settings-item-arrow">›</span>
+        </div>
+      </div>
+      <div class="settings-section">
+        <div class="settings-section-title">Données</div>
+        <button class="danger-btn" onclick="exportData()">📤 Exporter mes données (JSON)</button>
+        <button class="danger-btn" style="margin-top:8px;" onclick="importData()">📥 Importer des données</button>
+        <input type="file" id="importInput" accept=".json" style="display:none" onchange="handleImport(event)">
+        <button class="danger-btn" style="margin-top:8px; border-color:rgba(239,68,68,0.5);" onclick="confirmReset()">🗑 Tout effacer</button>
+      </div>
+      <p style="font-size:11px; color:var(--text3); text-align:center; margin-top:1rem; line-height:1.6;">
+        Toutes vos données sont stockées uniquement sur votre appareil.<br>Aucun compte, aucun serveur, aucune connexion requise.
+      </p>
+    </div>
+  </div>
+
+  <!-- ═══ ADD CITY MODAL ═══ -->
+  <div class="modal-overlay" id="addCityModal">
+    <div class="modal-box">
+      <div class="modal-handle"></div>
+      <div class="modal-title">Nouvelle destination</div>
+      <div class="modal-field">
+        <div class="modal-label">Ville</div>
+        <input class="modal-input" id="cityNameInput" type="text" placeholder="ex: Tokyo, New York, Rome...">
+      </div>
+      <div class="modal-field">
+        <div class="modal-label">Dates</div>
+        <input class="modal-input" id="cityDatesInput" type="text" placeholder="ex: 12–18 juin 2025">
+      </div>
+      <div class="modal-field">
+        <div class="modal-label">Icône (optionnel)</div>
+        <div style="display:flex; gap:6px; margin-bottom:8px;">
+          <button class="tab-btn active" id="emojiTabLieux" onclick="switchEmojiTab('lieux')" style="font-size:12px; padding:5px 12px;">📍 Lieux</button>
+          <button class="tab-btn" id="emojiTabDrapeaux" onclick="switchEmojiTab('drapeaux')" style="font-size:12px; padding:5px 12px;">🏳 Drapeaux</button>
+        </div>
+        <div class="emoji-picker" id="emojiPicker" style="max-height:110px; overflow-y:auto;"></div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeModal('addCityModal')">Annuler</button>
+        <button class="btn-confirm" onclick="saveCity()">Ajouter</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ TEXT MODAL (generic) ═══ -->
+  <div class="modal-overlay" id="textModal">
+    <div class="modal-box">
+      <div class="modal-handle"></div>
+      <div class="modal-title" id="textModalTitle"></div>
+      <div class="modal-field">
+        <div class="modal-label" id="textModalLabel"></div>
+        <input class="modal-input" id="textModalInput" type="text">
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeModal('textModal')">Annuler</button>
+        <button class="btn-confirm" onclick="textModalConfirm()">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ INSTALL HELP MODAL ═══ -->
+  <div class="modal-overlay" id="installModal">
+    <div class="modal-box">
+      <div class="modal-handle"></div>
+      <div class="modal-title">Installer sur Android</div>
+      <div style="font-size:14px; color:var(--text2); line-height:1.8;">
+        <p style="margin-bottom:12px;">Pour avoir cette app sur votre écran d'accueil :</p>
+        <p>1. Ouvrez ce fichier dans <strong style="color:var(--text);">Chrome</strong></p>
+        <p>2. Appuyez sur le menu <strong style="color:var(--text);">⋮</strong> en haut à droite</p>
+        <p>3. Sélectionnez <strong style="color:var(--text);">"Ajouter à l'écran d'accueil"</strong></p>
+        <p>4. Confirmez l'installation</p>
+        <p style="margin-top:12px; font-size:12px; color:var(--text3);">L'app fonctionne entièrement hors ligne. Vos données restent sur votre téléphone.</p>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-confirm" style="flex:none; width:100%;" onclick="closeModal('installModal')">Compris</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SHARE MODAL -->
+  <div class="modal-overlay" id="shareModal">
+    <div class="modal-box" style="max-height:90vh; overflow-y:auto;">
+      <div class="modal-handle"></div>
+      <div class="modal-title">Partager en lecture seule</div>
+      <p style="font-size:13px; color:var(--text2); margin-bottom:1rem; line-height:1.6;">
+        Ce lien contient toutes vos données de voyage. Votre conjointe peut l'ouvrir dans Chrome pour consulter l'itinéraire en lecture seule.
+      </p>
+
+      <div style="background:var(--bg3); border-radius:var(--radius-sm); padding:14px; margin-bottom:1rem;">
+        <div style="font-size:11px; color:var(--text3); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:8px;">QR Code</div>
+        <div id="qrcode-container" style="display:flex; justify-content:center; background:#fff; border-radius:10px; padding:12px;">
+          <div id="qrcode"></div>
+        </div>
+        <p style="font-size:11px; color:var(--text3); text-align:center; margin-top:8px;">Scanner avec l'appareil photo</p>
+      </div>
+
+      <div style="background:var(--bg3); border-radius:var(--radius-sm); padding:14px; margin-bottom:1rem;">
+        <div style="font-size:11px; color:var(--text3); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:8px;">Lien à envoyer</div>
+        <div id="shareUrlDisplay" style="font-size:11px; color:var(--text2); word-break:break-all; line-height:1.6; font-family:monospace; max-height:60px; overflow:hidden; text-overflow:ellipsis;"></div>
+      </div>
+
+      <div style="display:flex; gap:8px;">
+        <button class="btn-cancel" style="flex:1;" onclick="copyShareLink()">📋 Copier</button>
+        <button class="btn-confirm" style="flex:1;" onclick="nativeShare()">📤 Envoyer</button>
+      </div>
+      <button class="btn-cancel" style="width:100%; margin-top:8px;" onclick="closeModal('shareModal')">Fermer</button>
+    </div>
+  </div>
+
+  <!-- TRIP EMOJI MODAL -->
+  <div class="modal-overlay" id="tripEmojiModal">
+    <div class="modal-box">
+      <div class="modal-handle"></div>
+      <div class="modal-title">Icône du voyage</div>
+      <div class="modal-field">
+        <div class="modal-label">Drapeaux</div>
+        <div id="tripFlagPicker" style="display:flex; flex-wrap:wrap; gap:6px; max-height:160px; overflow-y:auto; margin-top:4px;"></div>
+      </div>
+      <div class="modal-field">
+        <div class="modal-label">Autres</div>
+        <div id="tripIconPicker" style="display:flex; flex-wrap:wrap; gap:6px; margin-top:4px;">
+          <div class="emoji-opt" onclick="selectTripEmoji(this)" data-emoji="✈️">✈️</div>
+          <div class="emoji-opt" onclick="selectTripEmoji(this)" data-emoji="🌍">🌍</div>
+          <div class="emoji-opt" onclick="selectTripEmoji(this)" data-emoji="🌎">🌎</div>
+          <div class="emoji-opt" onclick="selectTripEmoji(this)" data-emoji="🌏">🌏</div>
+          <div class="emoji-opt" onclick="selectTripEmoji(this)" data-emoji="🗺️">🗺️</div>
+          <div class="emoji-opt" onclick="selectTripEmoji(this)" data-emoji="🧳">🧳</div>
+          <div class="emoji-opt" onclick="selectTripEmoji(this)" data-emoji="🏖">🏖</div>
+          <div class="emoji-opt" onclick="selectTripEmoji(this)" data-emoji="🏔">🏔</div>
+          <div class="emoji-opt" onclick="selectTripEmoji(this)" data-emoji="🎒">🎒</div>
+          <div class="emoji-opt" onclick="selectTripEmoji(this)" data-emoji="🚢">🚢</div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeModal('tripEmojiModal')">Annuler</button>
+        <button class="btn-confirm" onclick="saveTripEmoji()">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD RECEIPT MODAL -->
+  <div class="modal-overlay" id="addReceiptModal">
+    <div class="modal-box">
+      <div class="modal-handle"></div>
+      <div class="modal-title" id="receiptModalTitle">Nouveau reçu / facture</div>
+      <div class="modal-field">
+        <div class="modal-label">Description</div>
+        <input class="modal-input" id="receiptDesc" type="text" placeholder="ex: Dîner chez Mario, Taxi aéroport...">
+      </div>
+      <div class="modal-field">
+        <div class="modal-label">Montant</div>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <input class="modal-input" id="receiptAmount" type="number" step="0.01" min="0" placeholder="0,00" style="flex:1;">
+          <select class="modal-input" id="receiptCurrency" style="width:80px; padding:11px 8px;">
+            <option>€</option><option>$</option><option>£</option><option>¥</option><option>CHF</option><option>CAD</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-field">
+        <div class="modal-label">Catégorie</div>
+        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-top:4px;" id="receiptCatGrid">
+          <button class="receipt-cat-btn selected" data-cat="restaurant" onclick="selectReceiptCat(this)">🍽️<br><span>Resto</span></button>
+          <button class="receipt-cat-btn" data-cat="transport" onclick="selectReceiptCat(this)">🚗<br><span>Transport</span></button>
+          <button class="receipt-cat-btn" data-cat="hotel" onclick="selectReceiptCat(this)">🏨<br><span>Hébergement</span></button>
+          <button class="receipt-cat-btn" data-cat="loisir" onclick="selectReceiptCat(this)">🎡<br><span>Loisirs</span></button>
+          <button class="receipt-cat-btn" data-cat="shopping" onclick="selectReceiptCat(this)">🛍️<br><span>Shopping</span></button>
+          <button class="receipt-cat-btn" data-cat="autre" onclick="selectReceiptCat(this)">📌<br><span>Autre</span></button>
+        </div>
+      </div>
+      <div class="modal-field">
+        <div class="modal-label">Date</div>
+        <input class="modal-input" id="receiptDate" type="date">
+      </div>
+      <div class="modal-field">
+        <div class="modal-label">Photo / scan (optionnel)</div>
+        <label style="display:flex; align-items:center; gap:10px; background:var(--bg3); border:1px solid var(--border2); border-radius:var(--radius-sm); padding:10px 13px; cursor:pointer;">
+          <span style="font-size:20px;">📷</span>
+          <span style="font-size:13px; color:var(--text2);" id="receiptFileLabel">Ajouter une photo ou PDF</span>
+          <input type="file" id="receiptFileInput" accept="image/*,application/pdf" style="display:none;" onchange="handleReceiptFile(event)">
+        </label>
+      </div>
+      <input type="hidden" id="receiptEditId">
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeModal('addReceiptModal')">Annuler</button>
+        <button class="btn-confirm" onclick="saveReceiptModal()">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD TODO WITH LINK MODAL -->
+  <div class="modal-overlay" id="addTodoModal">
+    <div class="modal-box">
+      <div class="modal-handle"></div>
+      <div class="modal-title">Nouvelle tâche avec lien</div>
+      <div class="modal-field">
+        <div class="modal-label">Tâche</div>
+        <input class="modal-input" id="todoModalText" type="text" placeholder="ex: Visiter le musée, Réserver le taxi...">
+      </div>
+      <div class="modal-field">
+        <div class="modal-label">Raccourcis</div>
+        <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:4px;">
+          <button class="tab-btn" onclick="applyPreset('maps')" style="font-size:12px; padding:5px 10px;">🗺️ Google Maps</button>
+          <button class="tab-btn" onclick="applyPreset('search')" style="font-size:12px; padding:5px 10px;">🔍 Chercher lieu</button>
+          <button class="tab-btn" onclick="applyPreset('booking')" style="font-size:12px; padding:5px 10px;">🏨 Booking</button>
+          <button class="tab-btn" onclick="applyPreset('tripadvisor')" style="font-size:12px; padding:5px 10px;">⭐ TripAdvisor</button>
+          <button class="tab-btn" onclick="applyPreset('web')" style="font-size:12px; padding:5px 10px;">🌐 Site web</button>
+        </div>
+      </div>
+      <div class="modal-field">
+        <div class="modal-label">URL du lien</div>
+        <input class="modal-input" id="todoModalUrl" type="text" placeholder="https://...">
+      </div>
+      <div class="modal-field">
+        <div class="modal-label">Libellé du bouton</div>
+        <input class="modal-input" id="todoModalLinkLabel" type="text" placeholder="ex: Voir sur Maps, Réservation...">
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeModal('addTodoModal')">Annuler</button>
+        <button class="btn-confirm" onclick="saveTodoModal()">Ajouter</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div class="toast" id="toast"></div>
+</div>
+
+  <!-- ═══ READ-ONLY VIEWER SCREEN ═══ -->
+  <div id="readonlyScreen" class="screen">
+    <div style="background:#0f2027; padding:2.5rem 1.25rem 1.25rem; border-bottom:1px solid var(--border);">
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:0.75rem;">
+        <span style="background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.3); border-radius:20px; font-size:11px; padding:3px 10px; font-weight:500;">👁 Lecture seule</span>
+      </div>
+      <div style="font-size:22px; font-weight:600; letter-spacing:-0.03em;" id="roTripName"></div>
+      <div style="font-size:13px; color:var(--text2); margin-top:3px;" id="roTripDates"></div>
+    </div>
+    <div style="padding:1rem 1.25rem; flex:1; overflow-y:auto;">
+      <p class="section-label">Destinations</p>
+      <div id="roCitiesListEl"></div>
+    </div>
+  </div>
+
+  <!-- READ-ONLY CITY DETAIL -->
+  <div id="readonlyDetailScreen" class="screen">
+    <div style="background:#0f2027; padding:2.5rem 1.25rem 1.25rem; border-bottom:1px solid var(--border);">
+      <div class="back-row">
+        <button class="back-btn" onclick="showScreen('readonlyScreen')">‹</button>
+        <span style="font-size:13px; color:var(--text2);">Retour</span>
+        <span style="background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.3); border-radius:20px; font-size:11px; padding:3px 10px; font-weight:500; margin-left:auto;">👁 Lecture seule</span>
+      </div>
+      <div style="display:flex; align-items:center; gap:12px; margin-top:8px;">
+        <span id="roDetailEmoji" style="font-size:32px;"></span>
+        <div>
+          <div class="detail-city-name" id="roDetailName"></div>
+          <div class="detail-city-dates" id="roDetailDates"></div>
+        </div>
+      </div>
+      <div class="tab-row">
+        <button class="tab-btn active" onclick="roSwitchTab('notes', this)">📝 Notes</button>
+        <button class="tab-btn" onclick="roSwitchTab('todos', this)">✅ À faire</button>
+        <button class="tab-btn" onclick="roSwitchTab('docs', this)">📄 Documents</button>
+        <button class="tab-btn" onclick="roSwitchTab('receipts', this)">🧾 Factures</button>
+      </div>
+    </div>
+    <div class="detail-body">
+      <div id="rotab-notes" class="tab-panel active">
+        <div id="roNoteContent" style="background:var(--bg2); border:1px solid var(--border2); border-radius:var(--radius); padding:14px; font-size:14px; line-height:1.7; color:var(--text2); white-space:pre-wrap; min-height:80px;"></div>
+      </div>
+      <div id="rotab-todos" class="tab-panel">
+        <div id="roTodosListEl"></div>
+      </div>
+      <div id="rotab-docs" class="tab-panel">
+        <div id="roDocsListEl"></div>
+      </div>
+      <div id="rotab-receipts" class="tab-panel">
+        <div id="roReceiptsTotal" style="background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius-sm); padding:10px 16px; margin-bottom:12px;">
+          <div style="font-size:11px; color:var(--text3); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:2px;">Total dépensé</div>
+          <div id="roReceiptsTotalVal" style="font-size:22px; font-weight:600; color:var(--accent);">0,00 €</div>
+        </div>
+        <div id="roReceiptsListEl"></div>
+      </div>
+    </div>
+  </div>
+
+<script>
+// ═══════════════════════════════
+// STORAGE
+// ═══════════════════════════════
+const S = {
+  get: (k) => { try { return JSON.parse(localStorage.getItem(k)); } catch(e) { return null; } },
+  set: (k, v) => localStorage.setItem(k, JSON.stringify(v)),
+  del: (k) => localStorage.removeItem(k)
+};
+
+// ═══════════════════════════════
+// STATE
+// ═══════════════════════════════
+let state = {
+  trip: { name: 'Mon Voyage', dates: '' },
+  cities: [],
+  pin: null,
+  pinMode: 'verify'  // 'set' | 'verify' | 'change'
+};
+let currentCityId = null;
+let pinBuffer = '';
+let newPinBuffer = '';
+let changingPin = false;
+let textModalCallback = null;
+const CITY_EMOJIS = ['—','🗼','🗽','🎡','🌴','🏝','🏔','🏜','🌊','🎭','🏛','🗿','⛩','🕌','🌃','🌉','🎑','🌅','🏖','🎪','🚂'];
+const FLAG_EMOJIS = [
+  '🇫🇷','🇺🇸','🇬🇧','🇩🇪','🇪🇸','🇮🇹','🇵🇹','🇧🇪','🇨🇭','🇳🇱',
+  '🇯🇵','🇨🇳','🇰🇷','🇹🇭','🇻🇳','🇮🇩','🇸🇬','🇮🇳','🇦🇺','🇳🇿',
+  '🇧🇷','🇦🇷','🇲🇽','🇨🇦','🇨🇺','🇵🇪','🇨🇱','🇨🇴',
+  '🇲🇦','🇿🇦','🇪🇬','🇸🇳','🇨🇮','🇰🇪','🇹🇳',
+  '🇹🇷','🇬🇷','🇭🇷','🇨🇿','🇵🇱','🇸🇪','🇳🇴','🇩🇰','🇫🇮','🇮🇸',
+  '🇷🇺','🇺🇦','🇮🇱','🇦🇪','🇸🇦','🇮🇷','🇯🇴','🇱🇧'
+];
+
+// ═══════════════════════════════
+// INIT
+// ═══════════════════════════════
+function init() {
+  if (checkReadOnlyMode()) return;
+  const saved = S.get('travelapp_data');
+  if (saved) {
+    state = { ...state, ...saved };
+    // Ensure cities array exists
+    if (!state.cities) state.cities = [];
+  }
+  const pinLogo = document.querySelector('.pin-logo');
+  if (pinLogo) pinLogo.textContent = state.trip.emoji || '✈️';
+  if (!state.pin) {
+    showPinSet();
+  } else {
+    showPinVerify();
+  }
+  // Generate manifest
+  generateManifest();
+}
+
+function generateManifest() {
+  const manifest = {
+    name: state.trip.name || 'Mon Voyage',
+    short_name: 'Voyage',
+    start_url: '.',
+    display: 'standalone',
+    background_color: '#0f172a',
+    theme_color: '#0f172a',
+    icons: [{ src: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">✈️</text></svg>', sizes: '192x192', type: 'image/svg+xml' }]
+  };
+  const blob = new Blob([JSON.stringify(manifest)], {type:'application/json'});
+  document.getElementById('manifestLink').href = URL.createObjectURL(blob);
+}
+
+function saveState() {
+  S.set('travelapp_data', state);
+}
+
+// ═══════════════════════════════
+// PIN SYSTEM
+// ═══════════════════════════════
+function showPinSet() {
+  state.pinMode = 'set';
+  document.getElementById('pinTitle').textContent = 'Créer un PIN';
+  document.getElementById('pinSub').textContent = 'Choisissez un code à 4 chiffres';
+  document.getElementById('pinHint').textContent = 'Ce code protège votre app. Notez-le précieusement.';
+  showScreen('pinScreen');
+}
+
+function showPinVerify() {
+  state.pinMode = 'verify';
+  document.getElementById('pinTitle').textContent = state.trip.name || 'Mon Voyage';
+  document.getElementById('pinSub').textContent = 'Entrez votre code PIN';
+  document.getElementById('pinHint').textContent = '';
+  showScreen('pinScreen');
+}
+
+function pinPress(digit) {
+  if (changingPin) {
+    handleChangePinFlow(digit);
+    return;
+  }
+  if (pinBuffer.length >= 4) return;
+  pinBuffer += digit;
+  updatePinDots(pinBuffer.length, false);
+  if (pinBuffer.length === 4) {
+    setTimeout(() => processPIN(), 200);
+  }
+}
+
+function pinDel() {
+  if (pinBuffer.length === 0) return;
+  pinBuffer = pinBuffer.slice(0, -1);
+  updatePinDots(pinBuffer.length, false);
+}
+
+function updatePinDots(count, error) {
+  for (let i = 0; i < 4; i++) {
+    const d = document.getElementById('d' + i);
+    d.className = 'pin-dot';
+    if (error) d.classList.add('error');
+    else if (i < count) d.classList.add('filled');
+  }
+}
+
+function processPIN() {
+  if (state.pinMode === 'set') {
+    state.pin = pinBuffer;
+    saveState();
+    pinBuffer = '';
+    updatePinDots(0, false);
+    showHome();
+    showToast('PIN créé avec succès 🔒');
+  } else {
+    if (pinBuffer === state.pin) {
+      pinBuffer = '';
+      updatePinDots(0, false);
+      showHome();
+    } else {
+      updatePinDots(4, true);
+      setTimeout(() => {
+        pinBuffer = '';
+        updatePinDots(0, false);
+      }, 800);
+    }
+  }
+}
+
+// Change PIN flow
+let changePinStep = 0;
+function changePIN() {
+  changingPin = true;
+  changePinStep = 1;
+  newPinBuffer = '';
+  pinBuffer = '';
+  document.getElementById('pinTitle').textContent = 'Changer le PIN';
+  document.getElementById('pinSub').textContent = 'Entrez l\'ancien PIN';
+  document.getElementById('pinHint').textContent = '';
+  updatePinDots(0, false);
+  showScreen('pinScreen');
+}
+
+function handleChangePinFlow(digit) {
+  if (changePinStep === 1) {
+    pinBuffer += digit;
+    updatePinDots(pinBuffer.length, false);
+    if (pinBuffer.length === 4) {
+      setTimeout(() => {
+        if (pinBuffer === state.pin) {
+          changePinStep = 2;
+          pinBuffer = '';
+          document.getElementById('pinSub').textContent = 'Nouveau PIN';
+          updatePinDots(0, false);
+        } else {
+          updatePinDots(4, true);
+          setTimeout(() => { pinBuffer = ''; updatePinDots(0, false); }, 800);
+        }
+      }, 200);
+    }
+  } else if (changePinStep === 2) {
+    pinBuffer += digit;
+    updatePinDots(pinBuffer.length, false);
+    if (pinBuffer.length === 4) {
+      newPinBuffer = pinBuffer;
+      setTimeout(() => {
+        changePinStep = 3;
+        pinBuffer = '';
+        document.getElementById('pinSub').textContent = 'Confirmez le nouveau PIN';
+        updatePinDots(0, false);
+      }, 200);
+    }
+  } else if (changePinStep === 3) {
+    pinBuffer += digit;
+    updatePinDots(pinBuffer.length, false);
+    if (pinBuffer.length === 4) {
+      setTimeout(() => {
+        if (pinBuffer === newPinBuffer) {
+          state.pin = newPinBuffer;
+          saveState();
+          changingPin = false; changePinStep = 0; pinBuffer = ''; newPinBuffer = '';
+          showHome();
+          showToast('PIN mis à jour ✓');
+        } else {
+          updatePinDots(4, true);
+          setTimeout(() => {
+            pinBuffer = ''; changePinStep = 2;
+            document.getElementById('pinSub').textContent = 'Nouveau PIN';
+            updatePinDots(0, false);
+          }, 800);
+        }
+      }, 200);
+    }
+  }
+}
+
+// ═══════════════════════════════
+// SCREEN NAV
+// ═══════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function showHome() {
+  renderCities();
+  updateStats();
+  document.getElementById('tripName').textContent = state.trip.name || 'Mon Voyage';
+  document.getElementById('tripDates').textContent = state.trip.dates || '';
+  document.getElementById('tripEmojiBtn').textContent = state.trip.emoji || '✈️';
+  showScreen('homeScreen');
+}
+
+function showSettings() {
+  document.getElementById('settingsTripName').textContent = state.trip.name;
+  document.getElementById('settingsTripDates').textContent = state.trip.dates;
+  const tripEmoji = document.getElementById('settingsTripEmoji');
+  if (tripEmoji) tripEmoji.textContent = state.trip.emoji || '✈️';
+  showScreen('settingsScreen');
+}
+
+function showDetail(cityId) {
+  currentCityId = cityId;
+  const city = state.cities.find(c => c.id === cityId);
+  if (!city) return;
+  document.getElementById('detailEmoji').textContent = city.emoji || '';
+  document.getElementById('detailName').textContent = city.name;
+  document.getElementById('detailDates').textContent = city.dates || '';
+  document.getElementById('noteTextarea').value = city.notes || '';
+  document.getElementById('saveNoteBtn').classList.remove('saved');
+  document.getElementById('saveNoteBtn').textContent = 'Enregistrer';
+  switchTab('notes', document.querySelector('.tab-btn'));
+  renderTodos();
+  renderDocs();
+  receiptFilter = 'all';
+  renderReceipts();
+  showScreen('detailScreen');
+}
+
+// ═══════════════════════════════
+// CITIES
+// ═══════════════════════════════
+function renderCities() {
+  const el = document.getElementById('citiesListEl');
+  if (!state.cities.length) {
+    el.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🗺️</div><p>Aucune ville encore.<br>Ajoutez votre première destination !</p></div>';
+    return;
+  }
+  el.innerHTML = state.cities.map(city => {
+    const docCount = (city.docs || []).length;
+    const noteLen = (city.notes || '').trim().length;
+    const todoCount = (city.todos || []).filter(t => !t.done).length;
+    const doneTodos = (city.todos || []).filter(t => t.done).length;
+    const totalTodos = (city.todos || []).length;
+    let badges = '';
+    if (docCount) badges += `<span class="badge badge-doc">📄 ${docCount}</span>`;
+    if (noteLen) badges += `<span class="badge badge-note">📝 Notes</span>`;
+    if (todoCount) badges += `<span class="badge badge-todo">✓ ${doneTodos}/${totalTodos}</span>`;
+    let progress = '';
+    if (totalTodos > 0) {
+      const pct = Math.round((doneTodos / totalTodos) * 100);
+      progress = `<div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>`;
+    }
+    return `<div class="city-item upcoming" onclick="showDetail('${city.id}')">
+      <div class="city-emoji" style="${city.emoji ? '' : 'background:transparent;'}">${city.emoji || ''}</div>
+      <div class="city-info">
+        <div class="city-name">${city.name}</div>
+        <div class="city-meta">${city.dates || 'Dates non définies'}</div>
+        ${badges ? `<div class="city-badges">${badges}</div>` : ''}
+        ${progress}
+      </div>
+      <div class="city-arrow">›</div>
+    </div>`;
+  }).join('');
+}
+
+function updateStats() {
+  const totalDocs = state.cities.reduce((a, c) => a + (c.docs || []).length + (c.receipts || []).length, 0);
+  const totalTodos = state.cities.reduce((a, c) => a + (c.todos || []).filter(t => !t.done).length, 0);
+  document.getElementById('statCities').textContent = state.cities.length;
+  document.getElementById('statDocs').textContent = totalDocs;
+  document.getElementById('statTodos').textContent = totalTodos;
+}
+
+function openAddCity() {
+  document.getElementById('cityNameInput').value = '';
+  document.getElementById('cityDatesInput').value = '';
+  switchEmojiTab('lieux');
+  openModal('addCityModal');
+  setTimeout(() => document.getElementById('cityNameInput').focus(), 300);
+}
+
+function switchEmojiTab(tab) {
+  document.getElementById('emojiTabLieux').classList.toggle('active', tab === 'lieux');
+  document.getElementById('emojiTabDrapeaux').classList.toggle('active', tab === 'drapeaux');
+  const ep = document.getElementById('emojiPicker');
+  const list = tab === 'lieux' ? CITY_EMOJIS : FLAG_EMOJIS;
+  ep.innerHTML = list.map((e, i) => {
+    const label = e === '—' ? '<span style="font-size:11px;color:var(--text3);">aucun</span>' : e;
+    const val = e === '—' ? '' : e;
+    return `<div class="emoji-opt${i===0?' selected':''}" onclick="selectEmoji(this)" data-emoji="${val}" style="${e==='—'?'font-size:13px;':''}''>${label}</div>`;
+  }).join('');
+}
+
+function selectEmoji(el) {
+  document.querySelectorAll('.emoji-opt').forEach(e => e.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function saveCity() {
+  const name = document.getElementById('cityNameInput').value.trim();
+  if (!name) { showToast('Entrez un nom de ville'); return; }
+  const dates = document.getElementById('cityDatesInput').value.trim();
+  const emoji = document.querySelector('.emoji-opt.selected')?.dataset.emoji ?? '';
+  const city = { id: Date.now().toString(), name, dates, emoji, notes: '', todos: [], docs: [] };
+  state.cities.push(city);
+  saveState();
+  closeModal('addCityModal');
+  renderCities();
+  updateStats();
+  showToast(`${emoji} ${name} ajouté !`);
+}
+
+function deleteCurrentCity() {
+  const city = state.cities.find(c => c.id === currentCityId);
+  if (!city) return;
+  if (!confirm(`Supprimer "${city.name}" et toutes ses données ?`)) return;
+  state.cities = state.cities.filter(c => c.id !== currentCityId);
+  saveState();
+  showHome();
+  showToast('Ville supprimée');
+}
+
+// ═══════════════════════════════
+// TABS
+// ═══════════════════════════════
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+}
+
+// ═══════════════════════════════
+// NOTES
+// ═══════════════════════════════
+function saveNote() {
+  const city = state.cities.find(c => c.id === currentCityId);
+  if (!city) return;
+  city.notes = document.getElementById('noteTextarea').value;
+  saveState();
+  const btn = document.getElementById('saveNoteBtn');
+  btn.textContent = '✓ Enregistré';
+  btn.classList.add('saved');
+  setTimeout(() => { btn.textContent = 'Enregistrer'; btn.classList.remove('saved'); }, 2000);
+}
+
+// ═══════════════════════════════
+// TODOS
+// ═══════════════════════════════
+function renderTodos() {
+  const city = state.cities.find(c => c.id === currentCityId);
+  const el = document.getElementById('todosListEl');
+  if (!city || !city.todos.length) {
+    el.innerHTML = '<div class="empty-state"><div class="empty-state-icon">✅</div><p>Aucune tâche pour l\'instant.<br>Ajoutez ce que vous voulez faire ici !</p></div>';
+    return;
+  }
+  el.innerHTML = city.todos.map(todo => {
+    let linkHtml = '';
+    if (todo.url) {
+      const isMap = todo.url.includes('maps') || todo.url.includes('geo:');
+      const cls = isMap ? 'todo-link-maps' : 'todo-link-web';
+      const icon = isMap ? '🗺️' : '🔗';
+      const label = todo.linkLabel || (isMap ? 'Ouvrir Maps' : 'Ouvrir le lien');
+      linkHtml = `<a class="todo-link-badge ${cls}" href="${todo.url}" target="_blank">${icon} ${label}</a>`;
+    }
+    return `<div class="todo-item-row">
+      <button class="todo-check-btn ${todo.done ? 'done' : ''}" onclick="toggleTodo('${todo.id}')">✓</button>
+      <div class="todo-item-body">
+        <div class="todo-item-text ${todo.done ? 'done' : ''}">${todo.text}</div>
+        ${linkHtml}
+      </div>
+      <div class="todo-actions">
+        <button class="todo-del-btn" onclick="deleteTodo('${todo.id}')">×</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function addTodo() {
+  const input = document.getElementById('todoInput');
+  const text = input.value.trim();
+  if (!text) return;
+  const city = state.cities.find(c => c.id === currentCityId);
+  if (!city) return;
+  city.todos.push({ id: Date.now().toString(), text, done: false, url: '', linkLabel: '' });
+  saveState();
+  input.value = '';
+  renderTodos();
+  updateStats();
+}
+
+function openAddTodoModal() {
+  document.getElementById('todoModalText').value = '';
+  document.getElementById('todoModalUrl').value = '';
+  document.getElementById('todoModalLinkLabel').value = '';
+  openModal('addTodoModal');
+  setTimeout(() => document.getElementById('todoModalText').focus(), 300);
+}
+
+function applyPreset(type) {
+  const urlInput = document.getElementById('todoModalUrl');
+  const labelInput = document.getElementById('todoModalLinkLabel');
+  const presets = {
+    maps: { url: 'https://maps.google.com/?q=', label: 'Voir sur Maps' },
+    search: { url: 'https://maps.google.com/?q=', label: 'Chercher sur Maps' },
+    booking: { url: 'https://www.booking.com/searchresults.fr.html?ss=', label: 'Voir sur Booking' },
+    tripadvisor: { url: 'https://www.tripadvisor.fr/Search?q=', label: 'Voir sur TripAdvisor' },
+    web: { url: 'https://', label: 'Visiter le site' }
+  };
+  const p = presets[type];
+  if (p) { urlInput.value = p.url; labelInput.value = p.label; urlInput.focus(); }
+}
+
+function saveTodoModal() {
+  const text = document.getElementById('todoModalText').value.trim();
+  if (!text) { showToast('Entrez une tâche'); return; }
+  const url = document.getElementById('todoModalUrl').value.trim();
+  const linkLabel = document.getElementById('todoModalLinkLabel').value.trim();
+  const city = state.cities.find(c => c.id === currentCityId);
+  if (!city) return;
+  city.todos.push({ id: Date.now().toString(), text, done: false, url, linkLabel });
+  saveState();
+  renderTodos();
+  updateStats();
+  closeModal('addTodoModal');
+  showToast('Tâche ajoutée ' + (url ? '🔗' : '✓'));
+}
+
+function toggleTodo(id) {
+  const city = state.cities.find(c => c.id === currentCityId);
+  const todo = city.todos.find(t => t.id === id);
+  if (todo) { todo.done = !todo.done; saveState(); renderTodos(); updateStats(); }
+}
+
+function deleteTodo(id) {
+  const city = state.cities.find(c => c.id === currentCityId);
+  city.todos = city.todos.filter(t => t.id !== id);
+  saveState(); renderTodos(); updateStats();
+}
+
+// ═══════════════════════════════
+// DOCUMENTS
+// ═══════════════════════════════
+function handleFileUpload(event) {
+  const files = event.target.files;
+  if (!files.length) return;
+  const city = state.cities.find(c => c.id === currentCityId);
+  if (!city) return;
+  let loaded = 0;
+  Array.from(files).forEach(file => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const doc = {
+        id: Date.now().toString() + Math.random(),
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        data: e.target.result
+      };
+      city.docs.push(doc);
+      loaded++;
+      if (loaded === files.length) {
+        saveState();
+        renderDocs();
+        updateStats();
+        showToast(`${loaded} document(s) ajouté(s)`);
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+  event.target.value = '';
+}
+
+function renderDocs() {
+  const city = state.cities.find(c => c.id === currentCityId);
+  const el = document.getElementById('docsListEl');
+  if (!city || !city.docs.length) {
+    el.innerHTML = '';
+    return;
+  }
+  el.innerHTML = city.docs.map(doc => {
+    const isPdf = doc.type === 'application/pdf';
+    const isImg = doc.type.startsWith('image/');
+    const iconClass = isPdf ? 'pdf' : isImg ? 'img' : 'other';
+    const iconEmoji = isPdf ? '📕' : isImg ? '🖼️' : '📎';
+    const sizeStr = doc.size > 1024*1024 ? (doc.size/1024/1024).toFixed(1)+' Mo' : (doc.size/1024).toFixed(0)+' Ko';
+    return `<div class="doc-item">
+      <div class="doc-icon ${iconClass}">${iconEmoji}</div>
+      <div class="doc-info">
+        <div class="doc-name">${doc.name}</div>
+        <div class="doc-size">${sizeStr}</div>
+      </div>
+      <button class="doc-open-btn" onclick="openDoc('${doc.id}')">Ouvrir</button>
+      <button class="doc-del-btn" onclick="deleteDoc('${doc.id}')">×</button>
+    </div>`;
+  }).join('');
+}
+
+function openDoc(id) {
+  const city = state.cities.find(c => c.id === currentCityId);
+  const doc = city.docs.find(d => d.id === id);
+  if (!doc) return;
+  const a = document.createElement('a');
+  a.href = doc.data;
+  a.download = doc.name;
+  a.target = '_blank';
+  a.click();
+}
+
+function deleteDoc(id) {
+  const city = state.cities.find(c => c.id === currentCityId);
+  city.docs = city.docs.filter(d => d.id !== id);
+  saveState(); renderDocs(); updateStats();
+  showToast('Document supprimé');
+}
+
+// ═══════════════════════════════
+// MODALS
+// ═══════════════════════════════
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', (e) => { if (e.target === m) m.classList.remove('open'); });
+});
+
+// ═══════════════════════════════
+// TRIP EMOJI
+// ═══════════════════════════════
+function openTripEmojiModal() {
+  const flagPicker = document.getElementById('tripFlagPicker');
+  const current = state.trip.emoji || '✈️';
+  flagPicker.innerHTML = FLAG_EMOJIS.map(e =>
+    `<div class="emoji-opt${e===current?' selected':''}" onclick="selectTripEmoji(this)" data-emoji="${e}">${e}</div>`
+  ).join('');
+  // Mark current in "Autres" too
+  document.querySelectorAll('#tripIconPicker .emoji-opt').forEach(el => {
+    el.classList.toggle('selected', el.dataset.emoji === current);
+  });
+  openModal('tripEmojiModal');
+}
+
+function selectTripEmoji(el) {
+  document.querySelectorAll('#tripFlagPicker .emoji-opt, #tripIconPicker .emoji-opt').forEach(e => e.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function saveTripEmoji() {
+  const sel = document.querySelector('#tripFlagPicker .emoji-opt.selected, #tripIconPicker .emoji-opt.selected');
+  if (!sel) { closeModal('tripEmojiModal'); return; }
+  const emoji = sel.dataset.emoji;
+  state.trip.emoji = emoji;
+  saveState();
+  document.getElementById('tripEmojiBtn').textContent = emoji;
+  const se = document.getElementById('settingsTripEmoji');
+  if (se) se.textContent = emoji;
+  closeModal('tripEmojiModal');
+  showToast('Icône mise à jour ✓');
+}
+
+// ═══════════════════════════════
+// SETTINGS ACTIONS
+// ═══════════════════════════════
+function editTripNameInline() {
+  document.getElementById('textModalTitle').textContent = 'Nom du voyage';
+  document.getElementById('textModalLabel').textContent = 'Nouveau nom';
+  document.getElementById('textModalInput').value = state.trip.name;
+  textModalCallback = (val) => {
+    if (val) {
+      state.trip.name = val;
+      saveState();
+      document.getElementById('tripName').textContent = val;
+      generateManifest();
+      showToast('Voyage renommé ✓');
+    }
+  };
+  openModal('textModal');
+  setTimeout(() => document.getElementById('textModalInput').focus(), 300);
+}
+
+function editTripDates() {
+  document.getElementById('textModalTitle').textContent = 'Dates du voyage';
+  document.getElementById('textModalLabel').textContent = 'ex: 12 juin — 3 juillet 2025';
+  document.getElementById('textModalInput').value = state.trip.dates;
+  textModalCallback = (val) => {
+    state.trip.dates = val; saveState(); showSettings();
+  };
+  openModal('textModal');
+  setTimeout(() => document.getElementById('textModalInput').focus(), 300);
+}
+
+function textModalConfirm() {
+  const val = document.getElementById('textModalInput').value.trim();
+  if (textModalCallback) textModalCallback(val);
+  closeModal('textModal');
+}
+
+document.getElementById('textModalInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') textModalConfirm();
+});
+
+function showInstallHelp() { openModal('installModal'); }
+
+function exportData() {
+  const json = JSON.stringify(state, null, 2);
+  const blob = new Blob([json], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'mon-voyage-backup.json';
+  a.click();
+  showToast('Export téléchargé ✓');
+}
+
+function importData() { document.getElementById('importInput').click(); }
+
+function handleImport(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const imported = JSON.parse(e.target.result);
+      if (imported.cities && imported.trip) {
+        if (confirm('Remplacer toutes les données actuelles par le fichier importé ?')) {
+          state = imported;
+          saveState();
+          showHome();
+          showToast('Données importées ✓');
+        }
+      } else { showToast('Fichier invalide'); }
+    } catch { showToast('Erreur de lecture'); }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+function confirmReset() {
+  if (confirm('Effacer TOUTES les données ? Cette action est irréversible.')) {
+    localStorage.clear();
+    location.reload();
+  }
+}
+
+
+// ═══════════════════════════════
+// RECEIPTS
+// ═══════════════════════════════
+let receiptFilter = 'all';
+
+const CAT_META = {
+  restaurant: { icon: '🍽️', label: 'Resto' },
+  transport:  { icon: '🚗', label: 'Transport' },
+  hotel:      { icon: '🏨', label: 'Hébergement' },
+  loisir:     { icon: '🎡', label: 'Loisirs' },
+  shopping:   { icon: '🛍️', label: 'Shopping' },
+  autre:      { icon: '📌', label: 'Autre' }
+};
+
+function renderReceipts() {
+  const city = state.cities.find(c => c.id === currentCityId);
+  const el = document.getElementById('receiptsListEl');
+  if (!city) return;
+  const receipts = city.receipts || [];
+  const filtered = receiptFilter === 'all' ? receipts : receipts.filter(r => r.cat === receiptFilter);
+
+  // Update total (always full, not filtered)
+  const total = receipts.reduce((s, r) => s + (parseFloat(r.amount) || 0), 0);
+  const currency = receipts.length ? (receipts[receipts.length-1].currency || '€') : '€';
+  document.getElementById('receipts-total').textContent = total.toFixed(2) + ' ' + currency;
+
+  if (!filtered.length) {
+    el.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🧾</div><p>' + (receiptFilter !== 'all' ? 'Aucun reçu dans cette catégorie.' : 'Aucun reçu encore.<br>Appuyez sur + pour ajouter.') + '</p></div>';
+    return;
+  }
+
+  // Group by date
+  const groups = {};
+  filtered.forEach(r => {
+    const key = r.date || 'Sans date';
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(r);
+  });
+
+  let out = '';
+  Object.keys(groups).sort().reverse().forEach(date => {
+    const label = date === 'Sans date' ? 'Sans date' : new Date(date + 'T12:00:00').toLocaleDateString('fr-FR', {weekday:'short', day:'numeric', month:'long'});
+    out += `<div style="font-size:11px; color:var(--text3); text-transform:uppercase; letter-spacing:0.08em; margin:12px 0 6px; font-weight:500;">${label}</div>`;
+    groups[date].forEach(r => {
+      const meta = CAT_META[r.cat] || CAT_META.autre;
+      const fileTag = r.fileData ? '<div class="receipt-has-file">📎 Justificatif joint</div>' : '';
+      out += `<div class="receipt-item" onclick="openReceiptDetail('${r.id}')">
+        <div class="receipt-cat-icon">${meta.icon}</div>
+        <div class="receipt-info">
+          <div class="receipt-desc">${r.desc}</div>
+          <div class="receipt-meta">${meta.label}</div>
+          ${fileTag}
+        </div>
+        <div>
+          <div class="receipt-amount">${parseFloat(r.amount || 0).toFixed(2)} ${r.currency || '€'}</div>
+          <button onclick="event.stopPropagation(); deleteReceipt('${r.id}')" style="margin-top:6px; background:transparent; border:1px solid var(--border2); border-radius:6px; color:var(--text3); cursor:pointer; width:28px; height:24px; font-size:12px; display:flex; align-items:center; justify-content:center; margin-left:auto;">×</button>
+        </div>
+      </div>`;
+    });
+  });
+  el.innerHTML = out;
+}
+
+function filterReceipts(cat, btn) {
+  receiptFilter = cat;
+  document.querySelectorAll('#receipt-filter-row .tab-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderReceipts();
+}
+
+let receiptFileData = null;
+let receiptFileName = '';
+
+function openAddReceiptModal() {
+  receiptFileData = null; receiptFileName = '';
+  document.getElementById('receiptDesc').value = '';
+  document.getElementById('receiptAmount').value = '';
+  document.getElementById('receiptDate').value = new Date().toISOString().split('T')[0];
+  document.getElementById('receiptFileLabel').textContent = 'Ajouter une photo ou PDF';
+  document.getElementById('receiptEditId').value = '';
+  document.getElementById('receiptModalTitle').textContent = 'Nouveau reçu / facture';
+  document.querySelectorAll('.receipt-cat-btn').forEach((b,i) => b.classList.toggle('selected', i===0));
+  openModal('addReceiptModal');
+  setTimeout(() => document.getElementById('receiptDesc').focus(), 300);
+}
+
+function openReceiptDetail(id) {
+  const city = state.cities.find(c => c.id === currentCityId);
+  const r = (city.receipts || []).find(x => x.id === id);
+  if (!r) return;
+  // If has file, open it; otherwise open edit modal
+  if (r.fileData) {
+    const a = document.createElement('a');
+    a.href = r.fileData; a.download = r.fileName || 'recu'; a.target = '_blank'; a.click();
+  } else {
+    // Pre-fill modal for editing
+    receiptFileData = null; receiptFileName = '';
+    document.getElementById('receiptDesc').value = r.desc;
+    document.getElementById('receiptAmount').value = r.amount;
+    document.getElementById('receiptCurrency').value = r.currency || '€';
+    document.getElementById('receiptDate').value = r.date || '';
+    document.getElementById('receiptFileLabel').textContent = 'Ajouter une photo ou PDF';
+    document.getElementById('receiptEditId').value = r.id;
+    document.getElementById('receiptModalTitle').textContent = 'Modifier le reçu';
+    document.querySelectorAll('.receipt-cat-btn').forEach(b => b.classList.toggle('selected', b.dataset.cat === r.cat));
+    openModal('addReceiptModal');
+  }
+}
+
+function selectReceiptCat(btn) {
+  document.querySelectorAll('.receipt-cat-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+}
+
+function handleReceiptFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    receiptFileData = e.target.result;
+    receiptFileName = file.name;
+    document.getElementById('receiptFileLabel').textContent = '✓ ' + file.name;
+  };
+  reader.readAsDataURL(file);
+  event.target.value = '';
+}
+
+function saveReceiptModal() {
+  const desc = document.getElementById('receiptDesc').value.trim();
+  if (!desc) { showToast('Entrez une description'); return; }
+  const amount = document.getElementById('receiptAmount').value;
+  const currency = document.getElementById('receiptCurrency').value;
+  const cat = document.querySelector('.receipt-cat-btn.selected')?.dataset.cat || 'autre';
+  const date = document.getElementById('receiptDate').value;
+  const editId = document.getElementById('receiptEditId').value;
+  const city = state.cities.find(c => c.id === currentCityId);
+  if (!city) return;
+  if (!city.receipts) city.receipts = [];
+
+  if (editId) {
+    const idx = city.receipts.findIndex(r => r.id === editId);
+    if (idx !== -1) {
+      city.receipts[idx] = { ...city.receipts[idx], desc, amount, currency, cat, date };
+      if (receiptFileData) { city.receipts[idx].fileData = receiptFileData; city.receipts[idx].fileName = receiptFileName; }
+    }
+    showToast('Reçu mis à jour ✓');
+  } else {
+    const rec = { id: Date.now().toString(), desc, amount, currency, cat, date, fileData: receiptFileData || '', fileName: receiptFileName };
+    city.receipts.push(rec);
+    showToast('Reçu ajouté 🧾');
+  }
+  saveState();
+  renderReceipts();
+  updateStats();
+  closeModal('addReceiptModal');
+}
+
+function deleteReceipt(id) {
+  const city = state.cities.find(c => c.id === currentCityId);
+  city.receipts = (city.receipts || []).filter(r => r.id !== id);
+  saveState(); renderReceipts(); updateStats();
+  showToast('Reçu supprimé');
+}
+
+// ═══════════════════════════════
+// TOAST
+// ═══════════════════════════════
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ═══════════════════════════════
+// SHARE & READ-ONLY
+// ═══════════════════════════════
+let roData = null;
+let roCityId = null;
+
+function openShareModal() {
+  // Build share URL: encode state as base64 in hash
+  const payload = {
+    trip: state.trip,
+    cities: state.cities.map(c => ({
+      id: c.id, name: c.name, dates: c.dates, emoji: c.emoji,
+      notes: c.notes, todos: c.todos,
+      // Exclude file data from docs/receipts to keep URL short
+      docs: (c.docs || []).map(d => ({ id: d.id, name: d.name, size: d.size, type: d.type })),
+      receipts: (c.receipts || []).map(r => ({ id: r.id, desc: r.desc, amount: r.amount, currency: r.currency, cat: r.cat, date: r.date, hasFile: !!r.fileData }))
+    }))
+  };
+  const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+  const url = location.href.split('#')[0] + '#view=' + encoded;
+
+  document.getElementById('shareUrlDisplay').textContent = url;
+
+  // Generate QR code
+  const qrEl = document.getElementById('qrcode');
+  qrEl.innerHTML = '';
+  try {
+    new QRCode(qrEl, { text: url, width: 180, height: 180, colorDark: '#0f172a', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M });
+  } catch(e) {
+    qrEl.innerHTML = '<p style="color:#666; font-size:12px; padding:1rem;">QR code indisponible<br>Utilisez le lien</p>';
+  }
+
+  openModal('shareModal');
+}
+
+function copyShareLink() {
+  const url = document.getElementById('shareUrlDisplay').textContent;
+  navigator.clipboard.writeText(url).then(() => showToast('Lien copié ✓')).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = url; document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta);
+    showToast('Lien copié ✓');
+  });
+}
+
+function nativeShare() {
+  const url = document.getElementById('shareUrlDisplay').textContent;
+  if (navigator.share) {
+    navigator.share({ title: state.trip.name + ' — Mon Voyage', text: 'Consulte notre itinéraire de voyage 🌍', url });
+  } else {
+    copyShareLink();
+  }
+}
+
+// ── READ-ONLY MODE ──
+function checkReadOnlyMode() {
+  const hash = location.hash;
+  if (!hash.startsWith('#view=')) return false;
+  try {
+    const encoded = hash.slice(6);
+    const json = decodeURIComponent(escape(atob(encoded)));
+    roData = JSON.parse(json);
+    showReadOnly();
+    return true;
+  } catch(e) {
+    return false;
+  }
+}
+
+function showReadOnly() {
+  document.getElementById('roTripName').textContent = (roData.trip.name || 'Voyage') + ' ✈️';
+  document.getElementById('roTripDates').textContent = roData.trip.dates || '';
+  const el = document.getElementById('roCitiesListEl');
+  el.innerHTML = (roData.cities || []).map(city => {
+    const docCount = (city.docs || []).length;
+    const noteLen = (city.notes || '').trim().length;
+    const todoCount = (city.todos || []).filter(t => !t.done).length;
+    const receiptCount = (city.receipts || []).length;
+    let badges = '';
+    if (docCount) badges += `<span class="badge badge-doc">📄 ${docCount}</span>`;
+    if (noteLen) badges += `<span class="badge badge-note">📝 Notes</span>`;
+    if (todoCount) badges += `<span class="badge badge-todo">✓ ${todoCount}</span>`;
+    if (receiptCount) badges += `<span class="badge" style="background:rgba(245,158,11,0.15);color:#f59e0b;border:1px solid rgba(245,158,11,0.25)">🧾 ${receiptCount}</span>`;
+    return `<div class="city-item upcoming" onclick="showRoDetail('${city.id}')">
+      <div class="city-emoji" style="${city.emoji ? '' : 'background:transparent;'}">${city.emoji || ''}</div>
+      <div class="city-info">
+        <div class="city-name">${city.name}</div>
+        <div class="city-meta">${city.dates || ''}</div>
+        ${badges ? `<div class="city-badges">${badges}</div>` : ''}
+      </div>
+      <div class="city-arrow">›</div>
+    </div>`;
+  }).join('') || '<div class="empty-state"><div class="empty-state-icon">🗺️</div><p>Aucune ville dans ce voyage.</p></div>';
+  showScreen('readonlyScreen');
+}
+
+function showRoDetail(cityId) {
+  roCityId = cityId;
+  const city = (roData.cities || []).find(c => c.id === cityId);
+  if (!city) return;
+  document.getElementById('roDetailEmoji').textContent = city.emoji || '📍';
+  document.getElementById('roDetailName').textContent = city.name;
+  document.getElementById('roDetailDates').textContent = city.dates || '';
+  roSwitchTab('notes', document.querySelector('#readonlyDetailScreen .tab-btn'));
+  renderRoNotes(city);
+  renderRoTodos(city);
+  renderRoDocs(city);
+  renderRoReceipts(city);
+  showScreen('readonlyDetailScreen');
+}
+
+function roSwitchTab(name, btn) {
+  document.querySelectorAll('#readonlyDetailScreen .tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('#readonlyDetailScreen .tab-panel').forEach(p => p.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  document.getElementById('rotab-' + name).classList.add('active');
+}
+
+function renderRoNotes(city) {
+  const el = document.getElementById('roNoteContent');
+  el.textContent = city.notes || 'Aucune note pour cette ville.';
+  if (!city.notes) el.style.color = 'var(--text3)';
+}
+
+function renderRoTodos(city) {
+  const el = document.getElementById('roTodosListEl');
+  const todos = city.todos || [];
+  if (!todos.length) { el.innerHTML = '<div class="empty-state"><div class="empty-state-icon">✅</div><p>Aucune tâche.</p></div>'; return; }
+  el.innerHTML = todos.map(todo => {
+    let linkHtml = '';
+    if (todo.url) {
+      const isMap = todo.url.includes('maps') || todo.url.includes('geo:');
+      const cls = isMap ? 'todo-link-maps' : 'todo-link-web';
+      const icon = isMap ? '🗺️' : '🔗';
+      const label = todo.linkLabel || (isMap ? 'Ouvrir Maps' : 'Ouvrir le lien');
+      linkHtml = `<a class="todo-link-badge ${cls}" href="${todo.url}" target="_blank">${icon} ${label}</a>`;
+    }
+    return `<div class="todo-item-row">
+      <div class="todo-check-btn ${todo.done ? 'done' : ''}" style="cursor:default;">✓</div>
+      <div class="todo-item-body">
+        <div class="todo-item-text ${todo.done ? 'done' : ''}">${todo.text}</div>
+        ${linkHtml}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderRoDocs(city) {
+  const el = document.getElementById('roDocsListEl');
+  const docs = city.docs || [];
+  if (!docs.length) { el.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📄</div><p>Aucun document.<br><span style="font-size:11px;color:var(--text3);">Les fichiers ne sont pas inclus dans le lien partagé.</span></p></div>'; return; }
+  el.innerHTML = docs.map(doc => {
+    const isPdf = doc.type === 'application/pdf';
+    const isImg = doc.type && doc.type.startsWith('image/');
+    const iconEmoji = isPdf ? '📕' : isImg ? '🖼️' : '📎';
+    const sizeStr = doc.size > 1024*1024 ? (doc.size/1024/1024).toFixed(1)+' Mo' : Math.round(doc.size/1024)+' Ko';
+    return `<div class="doc-item">
+      <div class="doc-icon ${isPdf?'pdf':isImg?'img':'other'}">${iconEmoji}</div>
+      <div class="doc-info">
+        <div class="doc-name">${doc.name}</div>
+        <div class="doc-size">${sizeStr} — fichier sur le téléphone principal</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderRoReceipts(city) {
+  const receipts = city.receipts || [];
+  const total = receipts.reduce((s, r) => s + (parseFloat(r.amount) || 0), 0);
+  const currency = receipts.length ? (receipts[receipts.length-1].currency || '€') : '€';
+  document.getElementById('roReceiptsTotalVal').textContent = total.toFixed(2) + ' ' + currency;
+  const el = document.getElementById('roReceiptsListEl');
+  if (!receipts.length) { el.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🧾</div><p>Aucune facture.</p></div>'; return; }
+  const catMeta = { restaurant:'🍽️', transport:'🚗', hotel:'🏨', loisir:'🎡', shopping:'🛍️', autre:'📌' };
+  el.innerHTML = receipts.map(r => `
+    <div class="receipt-item" style="cursor:default;">
+      <div class="receipt-cat-icon">${catMeta[r.cat] || '📌'}</div>
+      <div class="receipt-info">
+        <div class="receipt-desc">${r.desc}</div>
+        <div class="receipt-meta">${r.date ? new Date(r.date+'T12:00:00').toLocaleDateString('fr-FR',{day:'numeric',month:'long'}) : ''}</div>
+        ${r.hasFile ? '<div class="receipt-has-file">📎 Justificatif sur le téléphone principal</div>' : ''}
+      </div>
+      <div class="receipt-amount">${parseFloat(r.amount||0).toFixed(2)} ${r.currency||'€'}</div>
+    </div>`).join('');
+}
+
+// ═══════════════════════════════
+// START
+// ═══════════════════════════════
+init();
+</script>
+</body>
+</html>
