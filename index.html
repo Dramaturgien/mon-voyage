@@ -759,7 +759,7 @@
       </div>
       <div id="tab-docs" class="tab-panel">
         <div class="doc-upload-area">
-          <input type="file" id="fileInput" accept="*/*" onchange="handleFileUpload(event)" multiple>
+          <input type="file" id="fileInput" onchange="handleFileUpload(event)" multiple>
           <div class="doc-upload-icon">📎</div>
           <div class="doc-upload-text">Appuyer pour ajouter un document</div>
           <div class="doc-upload-sub">PDF, images, billets, réservations...</div>
@@ -1016,7 +1016,7 @@
         <label style="display:flex; align-items:center; gap:10px; background:var(--bg3); border:1px solid var(--border2); border-radius:var(--radius-sm); padding:10px 13px; cursor:pointer;">
           <span style="font-size:20px;">📷</span>
           <span style="font-size:13px; color:var(--text2);" id="receiptFileLabel">Ajouter une photo ou PDF</span>
-          <input type="file" id="receiptFileInput" accept="image/*,application/pdf" style="display:none;" onchange="handleReceiptFile(event)">
+          <input type="file" id="receiptFileInput" style="display:none;" onchange="handleReceiptFile(event)">
         </label>
       </div>
       <input type="hidden" id="receiptEditId">
